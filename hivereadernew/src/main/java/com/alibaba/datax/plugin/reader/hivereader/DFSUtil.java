@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.reader.hdfsreader;
+package com.alibaba.datax.plugin.reader.hivereader;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
@@ -17,14 +17,16 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.io.RCFile;
 import org.apache.hadoop.hive.ql.io.RCFileRecordReader;
-import org.apache.hadoop.hive.ql.io.orc.*;
+import org.apache.hadoop.hive.ql.io.orc.OrcFile;
+import org.apache.hadoop.hive.ql.io.orc.OrcInputFormat;
+import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
+import org.apache.hadoop.hive.ql.io.orc.Reader;
 import org.apache.hadoop.hive.serde2.columnar.BytesRefArrayWritable;
 import org.apache.hadoop.hive.serde2.columnar.BytesRefWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.*;
-import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
@@ -37,10 +39,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Created by mingya.wmy on 2015/8/12.
+ * Created by dean on 2019/10/25.
  */
 public class DFSUtil {
-    private static final Logger LOG = LoggerFactory.getLogger(HdfsReader.Job.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HiveReader.Job.class);
 
     private org.apache.hadoop.conf.Configuration hadoopConf = null;
     private String specifiedFileType = null;
@@ -69,6 +71,15 @@ public class DFSUtil {
         }
         hadoopConf.set(HDFS_DEFAULTFS_KEY, taskConfig.getString(Key.DEFAULT_FS));
 
+        String hdfsUser = taskConfig.getString("hdfsUser");
+        //使用用户进行可读写权限
+        if (StringUtils.isNotBlank(hdfsUser)){
+            System.setProperty("HADOOP_USER_NAME",hdfsUser);
+        }
+
+
+
+
         //是否有Kerberos认证
         this.haveKerberos = taskConfig.getBool(Key.HAVE_KERBEROS, false);
         if (haveKerberos) {
@@ -89,7 +100,7 @@ public class DFSUtil {
             } catch (Exception e) {
                 String message = String.format("kerberos认证失败,请确定kerberosKeytabFilePath[%s]和kerberosPrincipal[%s]填写正确",
                         kerberosKeytabFilePath, kerberosPrincipal);
-                throw DataXException.asDataXException(HdfsReaderErrorCode.KERBEROS_LOGIN_ERROR, message, e);
+                throw DataXException.asDataXException(HiveReaderErrorCode.KERBEROS_LOGIN_ERROR, message, e);
             }
         }
     }
@@ -124,14 +135,9 @@ public class DFSUtil {
                 Path path = new Path(hdfsPath);
                 FileStatus stats[] = hdfs.globStatus(path);
                 for (FileStatus f : stats) {
-                    String filename = f.getPath().getName();
                     if (f.isFile()) {
                         if (f.getLen() == 0) {
                             String message = String.format("文件[%s]长度为0，将会跳过不作处理！", hdfsPath);
-                            LOG.warn(message);
-                        } else if(filename.equals("_metadata_acid") || filename.equals("_orc_acid_version") ){
-                            //这个应该写入hive的时候自带出来的文件
-                            String message = String.format("文件[%s]为系统文件，将会跳过不作处理！", f.getPath());
                             LOG.warn(message);
                         } else {
                             addSourceFileByType(f.getPath().toString());
@@ -150,7 +156,7 @@ public class DFSUtil {
             String message = String.format("无法读取路径[%s]下的所有文件,请确认您的配置项fs.defaultFS, path的值是否正确，" +
                     "是否有读写权限，网络是否已断开！", hdfsPath);
             LOG.error(message);
-            throw DataXException.asDataXException(HdfsReaderErrorCode.PATH_CONFIG_ERROR, e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.PATH_CONFIG_ERROR, e);
         }
     }
 
@@ -170,19 +176,8 @@ public class DFSUtil {
                 LOG.info(String.format("[%s] 是目录, 递归获取该目录下的文件", f.getPath().toString()));
                 getHDFSAllFilesNORegex(f.getPath().toString(), hdfs);
             } else if (f.isFile()) {
-                String filename = f.getPath().getName();
-                if (f.getLen() == 0) {
-                    String message = String.format("文件[%s]长度为0，将会跳过不作处理！", f.getPath());
-                    LOG.warn(message);
-                } else if(filename.equals("_metadata_acid") || filename.equals("_orc_acid_version") ){
-                    //这个应该写入hive的时候自带出来的文件
-                    String message = String.format("文件[%s]为系统文件，将会跳过不作处理！", f.getPath());
-                    LOG.warn(message);
-                }
 
-                else {
-                    addSourceFileByType(f.getPath().toString());
-                }
+                addSourceFileByType(f.getPath().toString());
             } else {
                 String message = String.format("该路径[%s]文件类型既不是目录也不是文件，插件自动忽略。",
                         f.getPath().toString());
@@ -206,7 +201,7 @@ public class DFSUtil {
                     , filePath, this.specifiedFileType);
             LOG.error(message);
             throw DataXException.asDataXException(
-                    HdfsReaderErrorCode.FILE_TYPE_UNSUPPORT, message);
+                    HiveReaderErrorCode.FILE_TYPE_UNSUPPORT, message);
         }
     }
 
@@ -221,7 +216,7 @@ public class DFSUtil {
             return inputStream;
         } catch (IOException e) {
             String message = String.format("读取文件 : [%s] 时出错,请确认文件：[%s]存在且配置的用户有权限读取", filepath, filepath);
-            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message, e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.READ_FILE_ERROR, message, e);
         }
     }
 
@@ -247,7 +242,7 @@ public class DFSUtil {
         } catch (Exception e) {
             String message = String.format("SequenceFile.Reader读取文件[%s]时出错", sourceSequenceFilePath);
             LOG.error(message);
-            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_SEQUENCEFILE_ERROR, message, e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.READ_SEQUENCEFILE_ERROR, message, e);
         } finally {
             IOUtils.closeStream(reader);
             LOG.info("Finally, Close stream SequenceFile.Reader.");
@@ -289,7 +284,7 @@ public class DFSUtil {
         } catch (IOException e) {
             String message = String.format("读取文件[%s]时出错", sourceRcFilePath);
             LOG.error(message);
-            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_RCFILE_ERROR, message, e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.READ_RCFILE_ERROR, message, e);
         } finally {
             try {
                 if (recordReader != null) {
@@ -312,11 +307,7 @@ public class DFSUtil {
         StringBuilder allColumns = new StringBuilder();
         StringBuilder allColumnTypes = new StringBuilder();
         boolean isReadAllColumns = false;
-        String orcType = readerSliceConfig.getString("orcType").toUpperCase();
         int columnIndexMax = -1;
-        if (orcType.equals("ORC_ACID")){
-            columnIndexMax =5;
-        }
         // 判断是否读取所有列
         if (null == column || column.size() == 0) {
             int allColumnsCount = getAllColumnsCount(sourceOrcFilePath);
@@ -351,32 +342,18 @@ public class DFSUtil {
                 //TODO multy threads
                 InputSplit[] splits = in.getSplits(conf, 1);
 
-                RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
+                RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);//获取reader
                 Object key = reader.createKey();
-                Object value = reader.createValue();
+                Object value = reader.createValue();// OrcStruct
                 // 获取列信息
                 List<? extends StructField> fields = inspector.getAllStructFieldRefs();
 
                 List<Object> recordFields;
-                while (reader.next(key, value)) {
-                    Object value1 =null;
+                while (reader.next(key, value)) {//next 读取数据到   value(OrcStruct)
                     recordFields = new ArrayList<Object>();
-                    if (null!=orcType && orcType.toUpperCase().equals("ORC_ACID")){
-                        //需要取index为5，满足条件为index =5 而且值为json
-                        if (value!=null && value instanceof OrcStruct){
-                            OrcStruct valueOrc = ((OrcStruct) value);
-                            int numFields = valueOrc.getNumFields();
-                            if (numFields ==6){
-                                value1 = inspector.getStructFieldData(value, fields.get(numFields-1));
-                                if (value1 instanceof OrcStruct){
-                                }else{
-                                    value1 =null;
-                                }
-                            }
-                        }
-                    }
+
                     for (int i = 0; i <= columnIndexMax; i++) {
-                        Object field = inspector.getStructFieldData(value1==null?value:value1, fields.get(i));
+                        Object field = inspector.getStructFieldData(value, fields.get(i));//从 OrcStruct 数组中 返回对应列 数据
                         recordFields.add(field);
                     }
                     transportOneRecord(column, recordFields, recordSender,
@@ -387,11 +364,11 @@ public class DFSUtil {
                 String message = String.format("从orcfile文件路径[%s]中读取数据发生异常，请联系系统管理员。"
                         , sourceOrcFilePath);
                 LOG.error(message);
-                throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
+                throw DataXException.asDataXException(HiveReaderErrorCode.READ_FILE_ERROR, message);
             }
         } else {
             String message = String.format("请确认您所读取的列配置正确！columnIndexMax 小于0,column:%s", JSON.toJSONString(column));
-            throw DataXException.asDataXException(HdfsReaderErrorCode.BAD_CONFIG_VALUE, message);
+            throw DataXException.asDataXException(HiveReaderErrorCode.BAD_CONFIG_VALUE, message);
         }
     }
 
@@ -433,16 +410,6 @@ public class DFSUtil {
                         case STRING:
                             columnGenerated = new StringColumn(columnValue);
                             break;
-
-                        case BINARY:
-                            String [] array = columnValue.split("\\s");
-                            byte[] bytes = new byte[array.length];
-                            for (int i = 0; i<array.length;i++){
-                                bytes[i] = (byte) Integer.parseInt(array[i], 16);
-                            }
-                            columnGenerated = new BytesColumn(bytes);
-                            break;
-
                         case LONG:
                             try {
                                 columnGenerated = new LongColumn(columnValue);
@@ -534,7 +501,7 @@ public class DFSUtil {
             return reader.getTypes().get(0).getSubtypesCount();
         } catch (IOException e) {
             String message = "读取orcfile column列数失败，请联系系统管理员";
-            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
+            throw DataXException.asDataXException(HiveReaderErrorCode.READ_FILE_ERROR, message);
         }
     }
 
@@ -546,7 +513,7 @@ public class DFSUtil {
                 String message = String.format("您column中配置的index不能小于0，请修改为正确的index,column配置:%s",
                         JSON.toJSONString(columnConfigs));
                 LOG.error(message);
-                throw DataXException.asDataXException(HdfsReaderErrorCode.CONFIG_INVALID_EXCEPTION, message);
+                throw DataXException.asDataXException(HiveReaderErrorCode.CONFIG_INVALID_EXCEPTION, message);
             } else if (columnIndex != null && columnIndex > maxIndex) {
                 maxIndex = columnIndex;
             }
@@ -555,7 +522,7 @@ public class DFSUtil {
     }
 
     private enum Type {
-        STRING, LONG, BOOLEAN, DOUBLE, DATE,BINARY,
+        STRING, LONG, BOOLEAN, DOUBLE, DATE,
     }
 
     public boolean checkHdfsFileType(String filepath, String specifiedFileType) {
@@ -599,7 +566,7 @@ public class DFSUtil {
             String message = String.format("检查文件[%s]类型失败，目前支持ORC,SEQUENCE,RCFile,TEXT,CSV五种格式的文件," +
                     "请检查您文件类型和文件是否正确。", filepath);
             LOG.error(message);
-            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message, e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.READ_FILE_ERROR, message, e);
         }
         return false;
     }

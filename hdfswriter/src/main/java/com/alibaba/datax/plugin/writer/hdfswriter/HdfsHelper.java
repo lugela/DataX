@@ -12,11 +12,13 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.*;
+import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -25,6 +27,8 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -43,6 +47,7 @@ public  class HdfsHelper {
 
     public void getFileSystem(String defaultFS, Configuration taskConfig){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
+        String hdfsUser = taskConfig.getString("hdfsUser");
 
         Configuration hadoopSiteParams = taskConfig.getConfiguration(Key.HADOOP_CONFIG);
         JSONObject hadoopSiteParamsAsJsonObject = JSON.parseObject(taskConfig.getString(Key.HADOOP_CONFIG));
@@ -64,7 +69,14 @@ public  class HdfsHelper {
         this.kerberosAuthentication(this.kerberosPrincipal, this.kerberosKeytabFilePath);
         conf = new JobConf(hadoopConf);
         try {
-            fileSystem = FileSystem.get(conf);
+            if (StringUtils.isNotBlank(hdfsUser) && !haveKerberos){
+              System.setProperty("HADOOP_USER_NAME",hdfsUser);
+                fileSystem = FileSystem.get(new URI(hadoopConf.get(HDFS_DEFAULTFS_KEY)),conf,hdfsUser);
+            }else {
+                fileSystem = FileSystem.get(conf);
+            }
+
+
         } catch (IOException e) {
             String message = String.format("获取FileSystem时发生网络IO异常,请检查您的网络是否正常!HDFS地址：[%s]",
                     "message:defaultFS =" + defaultFS);
@@ -218,7 +230,17 @@ public  class HdfsHelper {
                     Path srcFilePah = new Path(srcFile);
                     Path dstFilePah = new Path(dstFile);
                     if(tmpFilesParent == null){
-                        tmpFilesParent = srcFilePah.getParent();
+                        //os.name
+                        String osName = System.getProperties().getProperty("os.name");
+                        if (osName.contains("Windows")){
+                          Path srcFilePahq = new Path(srcFilePah.toString().replace("\\","/"));
+                            tmpFilesParent = srcFilePahq.getParent();
+
+                        }else{
+                            tmpFilesParent = srcFilePah.getParent();
+                        }
+
+
                     }
                     LOG.info(String.format("start rename file [%s] to file [%s].", srcFile,dstFile));
                     boolean renameTag = false;
@@ -433,6 +455,13 @@ public  class HdfsHelper {
                 case DOUBLE:
                     objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Double.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
+                case DECIMAL:
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(HiveDecimal.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    break;
+                case BINARY:
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(BytesWritable.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    break;
+
                 case TIMESTAMP:
                     objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(java.sql.Timestamp.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
@@ -514,6 +543,11 @@ public  class HdfsHelper {
                                 break;
                             case DOUBLE:
                                 recordList.add(column.asDouble());
+                            case DECIMAL:
+                                recordList.add(HiveDecimal.create(new BigDecimal(rowData)));
+                                break;
+                            case BINARY:
+                                recordList.add(new BytesWritable(column.asBytes()));
                                 break;
                             case STRING:
                             case VARCHAR:

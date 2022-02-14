@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
@@ -109,6 +110,7 @@ public final class WriterUtil {
     }
 
     public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType, boolean forceUseUpdate) {
+        boolean update = writeMode.trim().toLowerCase().startsWith("update");
         boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
                 || writeMode.trim().toLowerCase().startsWith("replace")
                 || writeMode.trim().toLowerCase().startsWith("update");
@@ -130,6 +132,13 @@ public final class WriterUtil {
                     .append(")")
                     .append(onDuplicateKeyUpdateString(columnHolders))
                     .toString();
+        } else if(dataBaseType == DataBaseType.Oracle && update){
+                //支持oracle的更新
+            String s1 = writeMode.trim().toLowerCase();
+            String primaryKeys=s1.substring(s1.indexOf("(")+1,s1.indexOf(")"));
+            String[] primaryKeyArrs = primaryKeys.split(",");
+            writeDataSqlTemplate = getUpsertStatement("%s", (String[]) columnHolders.toArray(), primaryKeyArrs, true);
+
         } else {
 
             //这里是保护,如果其他错误的使用了update,需要更换为replace
@@ -141,7 +150,6 @@ public final class WriterUtil {
                     .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
                     .append(")").toString();
         }
-
         return writeDataSqlTemplate;
     }
 
@@ -213,6 +221,114 @@ public final class WriterUtil {
             }
         }
     }
+
+    public static void main(String[] args) {
+        WriterUtil writerUtil = new WriterUtil();
+        String user = writerUtil.getUpsertStatement("user", new String[]{"ID", "COL", "COL2"}, new String[]{"ID"}, true);
+        System.out.println("转化前："+user);
+        //wirtemode
+        String wirtemode ="update(col1,col2)";
+        String quStr=wirtemode.substring(wirtemode.indexOf("(")+1,wirtemode.indexOf(")"));
+
+        System.out.println(quStr);
+
+
+    }
+
+
+    //oracle 拼接写法
+    public static String  getUpsertStatement(String tableName, String[] fieldNames, String[] uniqueKeyFields, boolean allReplace) {
+        StringBuilder mergeIntoSql = new StringBuilder();
+        mergeIntoSql.append("MERGE INTO " + tableName + " T1 USING (").append(buildDualQueryStatement(fieldNames)).append(") T2 ON (").append(buildConnectionConditions(uniqueKeyFields) + ") ");
+        String updateSql = buildUpdateConnection(fieldNames, uniqueKeyFields, allReplace);
+        if (StringUtils.isNotEmpty(updateSql)) {
+            mergeIntoSql.append(" WHEN MATCHED THEN UPDATE SET ");
+            mergeIntoSql.append(updateSql);
+        }
+
+        mergeIntoSql.append(" WHEN NOT MATCHED THEN ").append("INSERT (").append((String)Arrays.stream(fieldNames).map((col) -> {
+            return quoteIdentifier(col);
+        }).collect(Collectors.joining(","))).append(") VALUES (").append((String)Arrays.stream(fieldNames).map((col) -> {
+            return "T2." + quoteIdentifier(col);
+        }).collect(Collectors.joining(","))).append(")");
+        return parseNamedStatement(mergeIntoSql.toString(), new HashMap<>());
+    }
+
+
+    private static  String parseNamedStatement(String sql, Map<String, List<Integer>> paramMap) {
+        StringBuilder parsedSql = new StringBuilder();
+        int fieldIndex = 1;
+        int length = sql.length();
+
+        for(int i = 0; i < length; ++i) {
+            char c = sql.charAt(i);
+            if (':' != c) {
+                parsedSql.append(c);
+            } else {
+                int j;
+                for(j = i + 1; j < length && Character.isJavaIdentifierPart(sql.charAt(j)); ++j) {
+                }
+
+                String parameterName = sql.substring(i + 1, j);
+                ((List)paramMap.computeIfAbsent(parameterName, (n) -> {
+                    return new ArrayList();
+                })).add(fieldIndex);
+                ++fieldIndex;
+                i = j - 1;
+                parsedSql.append('?');
+            }
+        }
+        return parsedSql.toString();
+    }
+
+
+
+
+    private static String buildDualQueryStatement(String[] column) {
+        StringBuilder sb = new StringBuilder("SELECT ");
+        String collect = (String)Arrays.stream(column).map((col) -> {
+            return wrapperPlaceholder(col) + quoteIdentifier(col);
+        }).collect(Collectors.joining(", "));
+        sb.append(collect).append(" FROM DUAL");
+        return sb.toString();
+    }
+
+
+    private static String buildUpdateConnection(String[] fieldNames, String[] uniqueKeyFields, boolean allReplace) {
+        List<String> uniqueKeyList = Arrays.asList(uniqueKeyFields);
+        String updateConnectionSql = (String)Arrays.stream(fieldNames).filter((col) -> {
+            boolean bbool = !uniqueKeyList.contains(col.toLowerCase()) && !uniqueKeyList.contains(col.toUpperCase());
+            return bbool;
+        }).map((col) -> {
+            return buildConnectionByAllReplace(allReplace, col);
+        }).collect(Collectors.joining(","));
+        return updateConnectionSql;
+    }
+
+
+    private static String quoteIdentifier(String identifier) {
+        return "" + identifier + "";
+    }
+
+    private static String wrapperPlaceholder(String fieldName) {
+        return " :" + fieldName + " ";
+    }
+
+
+    private static String buildConnectionByAllReplace(boolean allReplace, String col) {
+        String conncetionSql = allReplace ? quoteIdentifier("T1") + "." + quoteIdentifier(col) + " = " + quoteIdentifier("T2") + "." + quoteIdentifier(col) : quoteIdentifier("T1") + "." + quoteIdentifier(col) + " =nvl(" + quoteIdentifier("T2") + "." + quoteIdentifier(col) + "," + quoteIdentifier("T1") + "." + quoteIdentifier(col) + ")";
+        return conncetionSql;
+    }
+
+
+    private static String buildConnectionConditions(String[] uniqueKeyFields) {
+        return (String)Arrays.stream(uniqueKeyFields).map((col) -> {
+            return "T1." + quoteIdentifier(col.trim()) + "=T2." + quoteIdentifier(col.trim());
+        }).collect(Collectors.joining(" and "));
+    }
+
+
+
 
 
 }

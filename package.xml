@@ -32,6 +32,23 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
+
+        <fileSet>
+        <directory>hivereader/target/datax/</directory>
+        <includes>
+            <include>**/*.*</include>
+        </includes>
+        <outputDirectory>datax</outputDirectory>
+    </fileSet>
+
+        <fileSet>
+            <directory>hivereadernew/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+
         <fileSet>
             <directory>oceanbasev10reader/target/datax/</directory>
             <includes>

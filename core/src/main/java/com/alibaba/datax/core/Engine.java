@@ -200,6 +200,10 @@ public class Engine {
 
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
+
+        System.setProperty("datax.home", "D:\\workspace\\DataX\\target\\datax\\datax");
+        //设置datax的运行脚本信息
+        args = new String[]{"-mode", "standalone", "-jobid", "-1", "-job", "D:\\soft\\datax\\job\\T_INDICATOR_COM_EXPAND_hive2oracle.json"};
         try {
             Engine.entry(args);
         } catch (Throwable e) {
