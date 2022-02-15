@@ -135,9 +135,11 @@ public final class WriterUtil {
         } else if(dataBaseType == DataBaseType.Oracle && update){
                 //支持oracle的更新
             String s1 = writeMode.trim().toLowerCase();
-            String primaryKeys=s1.substring(s1.indexOf("(")+1,s1.indexOf(")"));
+            String primaryKeys=s1.substring(s1.indexOf("(")+1,s1.indexOf(")")).replaceAll("\"","");
+
             String[] primaryKeyArrs = primaryKeys.split(",");
-            writeDataSqlTemplate = getUpsertStatement("%s", (String[]) columnHolders.toArray(), primaryKeyArrs, true);
+            String[] columns = columnHolders.stream().map(x -> x.replaceAll("\"", "")).toArray(String[]::new);
+            writeDataSqlTemplate = getUpsertStatement("%s", columns, primaryKeyArrs, true);
 
         } else {
 
@@ -150,6 +152,7 @@ public final class WriterUtil {
                     .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
                     .append(")").toString();
         }
+        System.out.println("==============:"+writeDataSqlTemplate);
         return writeDataSqlTemplate;
     }
 

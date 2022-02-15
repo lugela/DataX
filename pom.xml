@@ -53,7 +53,7 @@
 <!--        <module>sqlserverreader</module>-->
 <!--        <module>postgresqlreader</module>-->
 <!--        <module>kingbaseesreader</module>-->
-            <!-- <module>oraclereader</module>-->
+             <module>oraclereader</module>
 <!--        <module>odpsreader</module>-->
 <!--        <module>otsreader</module>-->
 <!--        <module>otsstreamreader</module>-->
