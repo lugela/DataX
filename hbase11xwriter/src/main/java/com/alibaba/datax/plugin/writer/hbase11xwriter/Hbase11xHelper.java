@@ -9,6 +9,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,17 @@ public class Hbase11xHelper {
             // 用户配置的 key-value 对 来表示 hbaseConfig
             Validate.isTrue(hbaseConfigMap != null, "hbaseConfig不能为空Map结构!");
             for (Map.Entry<String, String> entry : hbaseConfigMap.entrySet()) {
-                hConfiguration.set(entry.getKey(), entry.getValue());
+                if (entry.getKey().equals(Key.CORE_XML_PATH)){
+                    hConfiguration.addResource(entry.getValue());
+                }else if (entry.getKey().equals(Key.HDFS_XML_PATH)){
+                    hConfiguration.addResource(entry.getValue());
+                }else if (entry.getKey().equals(Key.HBASE_XML_PATH)){
+                    hConfiguration.addResource(entry.getValue());
+                }else {
+                    hConfiguration.set(entry.getKey(), entry.getValue());
+                }
+
+
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(Hbase11xWriterErrorCode.GET_HBASE_CONNECTION_ERROR, e);
@@ -45,7 +56,21 @@ public class Hbase11xHelper {
 
         org.apache.hadoop.hbase.client.Connection hConnection = null;
         try {
+
+            Boolean haveKerberos = hConfiguration.getBoolean(Key.HAVE_KERBEROS, false);
+            if(haveKerberos){
+                LOG.info("begin to auth kerberos!");
+                String kerberosKeytabFilePath = hConfiguration.get(Key.KERBEROS_KEYTAB_FILE_PATH);
+                String kerberosPrincipal = hConfiguration.get(Key.KERBEROS_PRINCIPAL);
+                String krbFilePath = hConfiguration.get(Key.KERBEROS_FILE_PATH);
+                System.setProperty("java.security.krb5.conf", krbFilePath);
+                UserGroupInformation.setConfiguration(hConfiguration);
+                UserGroupInformation.loginUserFromKeytab(kerberosPrincipal, kerberosKeytabFilePath);
+                LOG.info("end to auth kerberos!");
+            }
+
             hConnection = ConnectionFactory.createConnection(hConfiguration);
+
 
         } catch (Exception e) {
             Hbase11xHelper.closeConnection(hConnection);
