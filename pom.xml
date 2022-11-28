@@ -77,10 +77,10 @@
         <module>gdbreader</module>
         <module>tsdbreader</module>
         <module>opentsdbreader</module>
-        <module>loghubreader</module>
-        <module>datahubreader</module>
-        <module>starrocksreader</module>
-
+        <module>cassandrareader</module>
+        <module>gdbreader</module>
+        <module>oceanbasev10reader</module>
+        <module>clickhousereader</module>
         <!-- writer -->
         <module>mysqlwriter</module>
         <module>starrockswriter</module>
