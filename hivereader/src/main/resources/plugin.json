@@ -2,5 +2,5 @@
     "name": "hivereader",
     "class": "com.alibaba.datax.plugin.reader.hivereader.HiveReader",
     "description": "",
-    "developer": "cedricdai"
+    "developer": "oyl"
 }

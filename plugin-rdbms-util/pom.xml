@@ -31,7 +31,7 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql.driver.version}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

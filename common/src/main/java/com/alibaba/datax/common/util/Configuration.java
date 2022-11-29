@@ -1068,7 +1068,7 @@ public class Configuration {
 		}
 	}
 
-	private Configuration(final String json) {
+	public Configuration(final String json) {
 		try {
 			this.root = JSON.parse(json);
 		} catch (Exception e) {

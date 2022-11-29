@@ -46,7 +46,26 @@ public class SingleTableSplitUtil {
             rangeList = genSplitSqlForOracle(splitPkName, table, where,
                     configuration, adviceNum);
             // warn: mysql etc to be added...
-        } else {
+        }  else if (DATABASE_TYPE == DataBaseType.MySql || DATABASE_TYPE == DataBaseType.Tddl || DATABASE_TYPE == DataBaseType.DRDS){
+
+            configuration.set(Key.QUERY_SQL, buildQuerySql(column, table, where));
+
+            Pair<Object, Object> minMaxPK = SplitSqlForMysql.getMinMaxPK(configuration, DATABASE_TYPE);
+            if (null == minMaxPK) {
+                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+                        "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
+            }
+            if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
+                // 切分后获取到的start/end 有 Null 的情况
+                pluginParams.add(configuration);
+                return pluginParams;
+            }
+
+            rangeList = SplitSqlForMysql.rangeList(configuration,minMaxPK ,adviceNum, DATABASE_TYPE);
+
+        }
+
+        else {
             Pair<Object, Object> minMaxPK = getPkRange(configuration);
             if (null == minMaxPK) {
                 throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
@@ -59,13 +78,11 @@ public class SingleTableSplitUtil {
                 pluginParams.add(configuration);
                 return pluginParams;
             }
-
             boolean isStringType = Constant.PK_TYPE_STRING.equals(configuration
                     .getString(Constant.PK_TYPE));
             boolean isLongType = Constant.PK_TYPE_LONG.equals(configuration
                     .getString(Constant.PK_TYPE));
 
-            
             if (isStringType) {
                 rangeList = RdbmsRangeSplitWrap.splitAndWrap(
                         String.valueOf(minMaxPK.getLeft()),
@@ -142,7 +159,7 @@ public class SingleTableSplitUtil {
     }
 
     @SuppressWarnings("resource")
-    private static Pair<Object, Object> getPkRange(Configuration configuration) {
+    public static Pair<Object, Object> getPkRange(Configuration configuration) {
         String pkRangeSQL = genPKRangeSQL(configuration);
 
         int fetchSize = configuration.getInt(Constant.FETCH_SIZE);
@@ -228,7 +245,7 @@ public class SingleTableSplitUtil {
         return minMaxPK;
     }
 
-    private static boolean isPKTypeValid(ResultSetMetaData rsMetaData) {
+    public static boolean isPKTypeValid(ResultSetMetaData rsMetaData) {
         boolean ret = false;
         try {
             int minType = rsMetaData.getColumnType(1);
@@ -272,7 +289,7 @@ public class SingleTableSplitUtil {
                 || type == Types.NVARCHAR;
     }
 
-    private static String genPKRangeSQL(Configuration configuration) {
+    public static String genPKRangeSQL(Configuration configuration) {
 
         String splitPK = configuration.getString(Key.SPLIT_PK).trim();
         String table = configuration.getString(Key.TABLE).trim();

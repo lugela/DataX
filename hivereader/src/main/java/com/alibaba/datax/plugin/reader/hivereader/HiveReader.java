@@ -11,7 +11,6 @@ import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -19,10 +18,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author daixinxuan
- * @date 2019/10/26 17:17
- */
+
 public class HiveReader extends Reader {
 
     /**
