@@ -152,7 +152,7 @@ public final class WriterUtil {
                     .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
                     .append(")").toString();
         }
-        System.out.println("==============:"+writeDataSqlTemplate);
+
         return writeDataSqlTemplate;
     }
 

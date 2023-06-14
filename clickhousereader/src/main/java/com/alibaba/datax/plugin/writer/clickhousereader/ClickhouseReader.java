@@ -7,7 +7,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-
+import com.google.common.io.LittleEndianDataInputStream;
 import java.util.List;
 
 public class ClickhouseReader extends Reader {

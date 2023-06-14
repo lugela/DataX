@@ -83,7 +83,7 @@ public class SubCommonClickhouseReader extends CommonRdbmsReader {
             int columnNumber = 0;
             ResultSet rs = null;
             try {
-                rs = DBUtil.query(conn, querySql, fetchSize);
+                rs = DBUtil.queryCk(conn, querySql, fetchSize);
                 queryPerfRecord.end();
 
                 ResultSetMetaData metaData = rs.getMetaData();

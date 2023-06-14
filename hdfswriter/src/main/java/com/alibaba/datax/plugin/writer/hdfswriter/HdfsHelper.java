@@ -27,11 +27,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.parquet.schema.OriginalType;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import parquet.schema.OriginalType;
+/*import parquet.schema.OriginalType;
 import parquet.schema.PrimitiveType;
-import parquet.schema.Types;
+import parquet.schema.Types;*/
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -104,7 +107,7 @@ public  class HdfsHelper {
         }
     }
 
-    private void kerberosAuthentication(String kerberosPrincipal, String kerberosKeytabFilePath){
+    public void kerberosAuthentication(String kerberosPrincipal, String kerberosKeytabFilePath){
         if(haveKerberos && StringUtils.isNotBlank(this.kerberosPrincipal) && StringUtils.isNotBlank(this.kerberosKeytabFilePath)){
             UserGroupInformation.setConfiguration(this.hadoopConf);
             try {
@@ -116,6 +119,34 @@ public  class HdfsHelper {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.KERBEROS_LOGIN_ERROR, e);
             }
         }
+    }
+
+
+    /**
+     * 在hdfs上创建目录
+     *
+     * @param filePath 需要创建的目录
+     * @return boolean
+     */
+    public boolean createPath(String filePath) {
+        Path path = new Path(filePath);
+        boolean exist = false;
+        try {
+            if (fileSystem.exists(path)) {
+                String message = String.format("文件路径[%s]已存在，无需创建！",
+                        "message:filePath =" + filePath);
+                LOG.info(message);
+                exist = true;
+            } else {
+                exist = fileSystem.mkdirs(path);
+            }
+        } catch (IOException e) {
+            String message = String.format("创建文件路径[%s]时发生网络IO异常,请检查您的网络是否正常！",
+                    "message:filePath =" + filePath);
+            LOG.error(message);
+            throw DataXException.asDataXException(HdfsWriterErrorCode.CONNECT_HDFS_IO_ERROR, e);
+        }
+        return exist;
     }
 
     /**

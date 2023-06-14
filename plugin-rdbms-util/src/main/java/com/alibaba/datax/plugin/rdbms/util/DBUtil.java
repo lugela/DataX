@@ -422,6 +422,17 @@ public final class DBUtil {
         return query(conn, sql, fetchSize, Constant.SOCKET_TIMEOUT_INSECOND);
     }
 
+    //不设置超时时间，主要是因为如果只读账号。会引起报错。如果要设置超时从数据库层面去解决
+    public static ResultSet queryCk(Connection conn, String sql, int fetchSize)
+            throws SQLException {
+        // make sure autocommit is off
+        conn.setAutoCommit(false);
+        Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY);
+        stmt.setFetchSize(fetchSize);
+        return query(stmt, sql);
+    }
+
     /**
      * a wrapped method to execute select-like sql statement .
      *

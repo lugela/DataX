@@ -71,7 +71,6 @@ public class Hbase11xHelper {
 
             hConnection = ConnectionFactory.createConnection(hConfiguration);
 
-
         } catch (Exception e) {
             Hbase11xHelper.closeConnection(hConnection);
             throw DataXException.asDataXException(Hbase11xWriterErrorCode.GET_HBASE_CONNECTION_ERROR, e);

@@ -11,10 +11,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.schema.MessageTypeParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import parquet.schema.MessageTypeParser;
-
+/*import parquet.schema.MessageTypeParser;*/
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 
 
@@ -147,6 +150,9 @@ public class HdfsWriter extends Writer {
             }
         }
 
+
+
+
         @Override
         public void prepare() {
             //若路径已经存在，检查path是否是目录
@@ -186,14 +192,43 @@ public class HdfsWriter extends Writer {
                     hdfsHelper.deleteFiles(existFilePaths);
                 }
             }else{
-                throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("您配置的path: [%s] 不存在, 请先在hive端创建对应的数据库和表.", path));
+                /*throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
+                        String.format("您配置的path: [%s] 不存在, 请先在hive端创建对应的数据库和表.", path));*/
+                LOG.info(String.format("您配置的路径: [%s] 不存在,自动为您创建此路径",path));
+                hdfsHelper.createPath(path);
             }
         }
 
         @Override
         public void post() {
             hdfsHelper.renameFile(tmpFiles, endFiles);
+            //实现load数据到hive表中
+            //判断配置文件中否存在 postsql,存在标签并且配置相关sql则执行
+            Boolean isenableJdbc = this.writerSliceConfig.getBool(Key.IS_ENABLE_JDBC, false);
+            if (isenableJdbc){
+                String hive_user = this.writerSliceConfig.getString(Key.HIVE_USER, "hdfs");
+                String hive_password = this.writerSliceConfig.getString(Key.HIVE_PASSWORD, "hdfs");
+                String hive_jdbc = this.writerSliceConfig.getNecessaryValue(Key.HIVE_JDBC, HdfsWriterErrorCode.REQUIRED_VALUE);
+                List<String> execSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
+                //创建JDBC连接
+                Connection connection = DBUtil.getConnection(hive_jdbc, hive_user, hive_password, this.writerSliceConfig);
+                Statement statement = null;
+                try {
+                    statement = connection.createStatement();
+                    for (String execSql: execSqls){
+                        statement.execute(execSql);
+                    }
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                    //异常抛出
+                    throw DataXException.asDataXException(HdfsWriterErrorCode.HIVE_EXCUTE_ERROR,  throwables.getMessage());
+
+                }finally {
+                    DBUtil.closeDBResources(statement,connection);
+                }
+
+            }
+
         }
 
         @Override

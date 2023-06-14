@@ -23,6 +23,7 @@ import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJo
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.JDBCUtil;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
@@ -33,6 +34,8 @@ import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Date;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -602,8 +605,8 @@ public class JobContainer extends AbstractContainer {
         reportCommunication.setLongCounter(CommunicationTool.RECORD_SPEED, recordSpeedPerSecond);
 
         super.getContainerCommunicator().report(reportCommunication);
-
-
+        long totalReadRecords = CommunicationTool.getTotalReadRecords(communication);
+        long totalErrorRecords = CommunicationTool.getTotalErrorRecords(communication);
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
                         + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
@@ -622,9 +625,9 @@ public class JobContainer extends AbstractContainer {
                 "记录写入速度",
                 String.valueOf(recordSpeedPerSecond)
                         + "rec/s", "读出记录总数",
-                String.valueOf(CommunicationTool.getTotalReadRecords(communication)),
+                String.valueOf(totalReadRecords),
                 "读写失败总数",
-                String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
+                String.valueOf(totalErrorRecords)
         ));
 
         if (communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS) > 0
@@ -643,7 +646,40 @@ public class JobContainer extends AbstractContainer {
             ));
         }
 
+        //开启了日志收集功能,通过jdbc 对日志存入到mysql中
+        Configuration dbconfiguration = this.configuration.getConfiguration("job").getConfiguration("setting").getConfiguration("logToDB");
+        if(null != dbconfiguration && dbconfiguration.getBool("isEnable",false)){
+            //开启了日志记录功能
+            String dbDriver = dbconfiguration.getString("dbDriver", "com.mysql.cj.jdbc.Driver");
+            String dbUrl = dbconfiguration.getNecessaryValue("dbUrl", FrameworkErrorCode.Log_DB_EBABLE);
+            String dbUserName = dbconfiguration.getNecessaryValue("dbUserName", FrameworkErrorCode.Log_DB_EBABLE);
+            String dbPassword = dbconfiguration.getNecessaryValue("dbPassword", FrameworkErrorCode.Log_DB_EBABLE);
+            String sync_type = dbconfiguration.getNecessaryValue("syncType", FrameworkErrorCode.Log_DB_EBABLE);
+            String sync_manager = dbconfiguration.getString("syncManager", "admin");
+            String sync_source_type = dbconfiguration.getString("syncSourceType");
+            String sync_source_desc = dbconfiguration.getString("syncSourceDesc");
+            String sync_dest_type = dbconfiguration.getString("syncDestType");
+            String sync_dest_desc = dbconfiguration.getString("syncDestDesc");
+            String sync_comment = dbconfiguration.getString("syncComment");
+            JDBCUtil jdbcUtil = new JDBCUtil(dbDriver, dbUrl, dbUserName, dbPassword);
+            String insertLog = "insert into data_sync_log(sync_state,sync_type,sync_start_time,sync_finish_time,sync_tool,sync_manager,sync_records,sync_source_type,sync_source_desc,sync_dest_type,sync_dest_desc,sync_comment) " +
+                    "values(?,?,?,?,?,?,?,?,?,?,?,?)";
+            jdbcUtil.getDML(insertLog,"1",sync_type,timeStampToDate(startTimeStamp),timeStampToDate(endTimeStamp),"DATAX",sync_manager,totalReadRecords,sync_source_type,sync_source_desc,sync_dest_type,sync_dest_desc,sync_comment);
 
+        }
+
+
+    }
+
+    public java.util.Date timeStampToDate(Long timeStamp){
+        java.util.Date parse = null;
+        try {
+            String format = dateFormat.format(timeStamp);
+             parse = dateFormat.parse(format);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return parse;
     }
 
     /**

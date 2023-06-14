@@ -247,6 +247,14 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
 
+        <fileSet>
+            <directory>clickhousereader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+
         <!-- writer -->
         <fileSet>
             <directory>mysqlwriter/target/datax/</directory>

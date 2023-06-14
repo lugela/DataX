@@ -46,12 +46,17 @@
         <module>common</module>
         <module>core</module>
         <module>transformer</module>
-        <!--<module>hivereader</module>-->
-        <module>hivereadernew</module>
+
         <!-- reader -->
-        <!--<module>mysqlreader</module>
-        <module>drdsreader</module>
         <module>sqlserverreader</module>
+        <module>clickhousereader</module>
+        <module>hivereader</module>
+        <!--
+         <module>hivereader</module>
+        <module>hivereadernew</module>
+        <module>mysqlreader</module>
+        <module>drdsreader</module>
+
         <module>postgresqlreader</module>
         <module>kingbaseesreader</module>
         <module>oraclereader</module>
@@ -78,12 +83,17 @@
         <module>gdbreader</module>
         <module>tsdbreader</module>
         <module>opentsdbreader</module>
-        <module>cassandrareader</module>
+        &lt;!&ndash;<module>cassandrareader</module>
         <module>gdbreader</module>
-        <module>oceanbasev10reader</module>-->
-        <module>clickhousereader</module>
+        <module>oceanbasev10reader</module>&ndash;&gt;
+
+-->
+
         <!-- writer -->
-       <!-- <module>mysqlwriter</module>
+        <module>hdfswriter</module>
+        <module>mysqlwriter</module>
+        <module>elasticsearchwriter</module>
+        <!--
         <module>starrockswriter</module>
         <module>drdswriter</module>
         <module>oraclewriter</module>
@@ -106,11 +116,11 @@
         <module>hbase20xsqlwriter</module>
         <module>kuduwriter</module>
         <module>ftpwriter</module>
-        <module>hdfswriter</module>
+
         <module>txtfilewriter</module>
         <module>streamwriter</module>
 
-        <module>elasticsearchwriter</module>
+
         <module>mongodbwriter</module>
         <module>tdenginewriter</module>
         <module>ocswriter</module>
@@ -119,9 +129,9 @@
         <module>oscarwriter</module>
         <module>loghubwriter</module>
         <module>datahubwriter</module>
-        <module>cassandrawriter</module>-->
+        <module>cassandrawriter</module>
         <module>clickhousewriter</module>
-        <module>doriswriter</module>
+        <module>doriswriter</module>-->
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>

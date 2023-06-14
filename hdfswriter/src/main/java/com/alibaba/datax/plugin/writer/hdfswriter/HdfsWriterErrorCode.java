@@ -16,7 +16,10 @@ public enum HdfsWriterErrorCode implements ErrorCode {
     CONNECT_HDFS_IO_ERROR("HdfsWriter-06", "与HDFS建立连接时出现IO异常."),
     COLUMN_REQUIRED_VALUE("HdfsWriter-07", "您column配置中缺失了必须填写的参数值."),
     HDFS_RENAME_FILE_ERROR("HdfsWriter-08", "将文件移动到配置路径失败."),
-    KERBEROS_LOGIN_ERROR("HdfsWriter-09", "KERBEROS认证失败");
+    KERBEROS_LOGIN_ERROR("HdfsWriter-09", "KERBEROS认证失败"),
+
+    CONN_DB_ERROR("HdfsWriter-10", "连接hive出错."),
+    HIVE_EXCUTE_ERROR("HdfsWriter-11", "执行hive报错");
 
     private final String code;
     private final String description;

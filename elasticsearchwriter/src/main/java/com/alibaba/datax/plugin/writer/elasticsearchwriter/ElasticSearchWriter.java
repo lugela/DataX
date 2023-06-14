@@ -292,6 +292,7 @@ public class ElasticSearchWriter extends Writer {
                             field.put("eager_global_ordinals", jo.getBoolean("eager_global_ordinals"));
                             break;
                         case TEXT:
+                        case COMPLETION:
                             field.put("analyzer", jo.getString("analyzer"));
                             // 优化disk使用,也同步会提高index性能
                             // https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-disk-usage.html
@@ -719,6 +720,7 @@ public class ElasticSearchWriter extends Writer {
                                             case BYTE:
                                             case KEYWORD:
                                             case TEXT:
+                                            case COMPLETION:
                                                 data.put(columnName, dataList);
                                                 break;
                                             case SHORT:
@@ -821,6 +823,7 @@ public class ElasticSearchWriter extends Writer {
                                 case IP:
                                 case GEO_POINT:
                                 case IP_RANGE:
+                                case COMPLETION:
                                     data.put(columnName, column.asString());
                                     break;
                                 case BOOLEAN:

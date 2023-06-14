@@ -128,10 +128,6 @@ public class CommonRdbmsReader {
         private String jdbcUrl;
         private String mandatoryEncoding;
 
-
-
-
-
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private String basicMsg;
 

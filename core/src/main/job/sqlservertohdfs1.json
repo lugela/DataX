@@ -1,0 +1,675 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 1,
+        "byte": -1,
+        "record": -1
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.01
+      },
+      "logToDB": {
+        "isEnable": true,
+        "dbDriver": "com.mysql.cj.jdbc.Driver",
+        "dbUrl": "jdbc:mysql://172.17.65.29:3306/data_cloud",
+        "dbPassword":"1qaz@WSX3edc",
+        "dbUserName":"root",
+        "syncType":"0",
+        "syncManager": "ouyangl",
+        "syncSourceType": "jdbc:sqlserver://172.16.101.209:1433;database=JYDB",
+        "syncSourceDesc": "LC_IncomeStatementAll",
+        "syncDestType": "jdbc:hive2://hdp-ambari.tebon.com:2181,hdp-node1.tebon.com:2181,hdp-node2.tebon.com:2181,hdp-node3.tebon.com:2181,hdp-snnode.tebon.com:2181/default;httpPath=cliservice;password=root;principal=hive/_HOST@TEBON.COM;serviceDiscoveryMode=zooKeeper;transportMode=http;user=root;zooKeeperNamespace=hiveserver2",
+        "syncDestDesc": "lugela_test.jy_lc_incomestatementall_test"
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "sqlserverreader",
+          "parameter": {
+            "username": "sjcx",
+            "password": "sjcx2015",
+            "connection": [
+              {
+                "querySql": [
+                  "select
+                  TOP 5
+                  id,
+                  infopubldate,
+                  infosource,
+                  bulletintype,
+                  companycode,
+                  enddate,
+                  ifadjusted,
+                  ifmerged,
+                  accountingstandards,
+                  enterprisetype,
+                  totaloperatingrevenue,
+                  operatingrevenue,
+                  netinterestincome,
+                  interestincome,
+                  interestexpense,
+                  netcommissionincome,
+                  commissionincome,
+                  commissionexpense,
+                  netproxysecuincome,
+                  netsubissuesecuincome,
+                  nettrustincome,
+                  premiumsearned,
+                  premiumsincome,
+                  reinsuranceincome,
+                  reinsurance,
+                  unearnedpremiumreserve,
+                  otheroperatingrevenue,
+                  specialitemsor,
+                  adjustmentitemsor,
+                  totaloperatingcost,
+                  operatingpayout,
+                  refundedpremiums,
+                  compensationexpense,
+                  amortizationexpense,
+                  premiumreserve,
+                  amortizationpremiumreserve,
+                  policydividendpayout,
+                  reinsurancecost,
+                  operatingandadminexpense,
+                  amortizationreinsurancecost,
+                  insurancecommissionexpense,
+                  otheroperatingcost,
+                  operatingcost,
+                  operatingtaxsurcharges,
+                  operatingexpense,
+                  administrationexpense,
+                  financialexpense,
+                  assetimpairmentloss,
+                  specialitemstoc,
+                  adjustmentitemstoc,
+                  othernetrevenue,
+                  fairvaluechangeincome,
+                  investincome,
+                  investincomeassociates,
+                  exchangeincome,
+                  otheritemseffectingop,
+                  adjusteditemseffectingop,
+                  operatingprofit,
+                  nonoperatingincome,
+                  nonoperatingexpense,
+                  noncurrentassetssdealloss,
+                  otheritemseffectingtp,
+                  adjusteditemseffectingtp,
+                  totalprofit,
+                  incometaxcost,
+                  uncertainedinvestmentlosses,
+                  otheritemseffectingnp,
+                  adjusteditemseffectingnp,
+                  netprofit,
+                  npparentcompanyowners,
+                  minorityprofit,
+                  otheritemseffectingnpp,
+                  adjusteditemseffectingnpp,
+                  othercompositeincome,
+                  adjusteditemseffectingci,
+                  totalcompositeincome,
+                  ciparentcompanyowners,
+                  ciminorityowners,
+                  adjusteditemseffectingpci,
+                  basiceps,
+                  dilutedeps,
+                  specialfieldremark,
+                  updatetime,
+                  jsid,
+                  ifcomplete,
+                  ociparentcompanyowners,
+                  ocinotinincomestatement,
+                  ociremearsure,
+                  ociequitynotinis,
+                  ociinincomestatement,
+                  ociequityinis,
+                  ocifairvalue,
+                  ocitomaturityfa,
+                  ocicfloss,
+                  ociforeigncurrencyfsa,
+                  ociothers,
+                  ociminorityowners,
+                  otherrevenue,
+                  assetdealincome,
+                  opersustcateg,
+                  opersustnetp,
+                  disconopernetp,
+                  ownershipcateg,
+                  randd,
+                  creditimpairmentl,
+                  netopenhedgeincome,
+                  interestfinexp,
+                  interestincomefin,
+                  othequfvchange,
+                  corporatecrchange,
+                  othdebtinveschange,
+                  finassetrotherci,
+                  otherdebtinvestcip,
+                  preinsurrsrv,
+                  netclaimincurred,
+                  netpremiumreserve,
+                  amortisedcostincome,
+                  InfoSourceCode,
+                  InsertTime
+                  from LC_IncomeStatementAll;"
+                ],
+                "jdbcUrl": [
+                  "jdbc:sqlserver://172.16.101.209:1433;database=JYDB"
+                ]
+              }
+            ]
+          }
+        },
+        "writer": {
+          "name": "hdfswriter",
+          "parameter": {
+            "defaultFS":"hdfs://HAHDP",
+            "hadoopConfig":{
+              "dfs.client.failover.proxy.provider.HAHDP":"org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider",
+              "dfs.ha.namenodes.HAHDP":"nn1,nn2",
+              "dfs.namenode.rpc-address.HAHDP.nn1":"hdp-ambari.tebon.com:8020",
+              "dfs.namenode.rpc-address.HAHDP.nn2":"hdp-snnode.tebon.com:8020",
+              "dfs.nameservices":"HAHDP"
+            },
+            "fileType": "orc",
+            "path": "/tmp/ods/jy_lc_incomestatementall/",
+            "fileName": "part",
+            "writeMode": "truncate",
+            "fieldDelimiter": "\t",
+            "haveKerberos":true,
+            "kerberosKeytabFilePath":"D:\\stockapp.keytab",
+            "kerberosPrincipal":"stockapp@TEBON.COM",
+            "isEnableJdbc": true,
+            "hiveJdbc":"jdbc:hive2://hdp-ambari.tebon.com:2181,hdp-node1.tebon.com:2181,hdp-node2.tebon.com:2181,hdp-node3.tebon.com:2181,hdp-snnode.tebon.com:2181/default;httpPath=cliservice;password=root;principal=hive/_HOST@TEBON.COM;serviceDiscoveryMode=zooKeeper;transportMode=http;user=root;zooKeeperNamespace=hiveserver2" ,
+            "postSql": [
+              "load data inpath '/tmp/ods/jy_lc_incomestatementall' overwrite into table lugela_test.jy_lc_incomestatementall_test"
+            ],
+            "column": [
+              {
+                "name": "id",
+                "type":"bigint"
+              },
+              {
+                "name": "infopubldate",
+                "type":"string"
+              },
+              {
+                "name": "infosource",
+                "type":"string"
+              },
+              {
+                "name": "bulletintype",
+                "type":"int"
+              },
+              {
+                "name": "companycode",
+                "type":"int"
+              },
+              {
+                "name": "enddate",
+                "type":"string"
+              },
+              {
+                "name": "ifadjusted",
+                "type":"int"
+              },
+              {
+                "name": "ifmerged",
+                "type":"int"
+              },
+              {
+                "name": "accountingstandards",
+                "type":"int"
+              },
+              {
+                "name": "enterprisetype",
+                "type":"int"
+              },
+              {
+                "name": "totaloperatingrevenue",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingrevenue",
+                "type":"decimal"
+              },
+              {
+                "name": "netinterestincome",
+                "type":"decimal"
+              },
+              {
+                "name": "interestincome",
+                "type":"decimal"
+              },
+              {
+                "name": "interestexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "netcommissionincome",
+                "type":"decimal"
+              },
+              {
+                "name": "commissionincome",
+                "type":"decimal"
+              },
+              {
+                "name": "commissionexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "netproxysecuincome",
+                "type":"decimal"
+              },
+              {
+                "name": "netsubissuesecuincome",
+                "type":"decimal"
+              },
+              {
+                "name": "nettrustincome",
+                "type":"decimal"
+              },
+              {
+                "name": "premiumsearned",
+                "type":"decimal"
+              },
+              {
+                "name": "premiumsincome",
+                "type":"decimal"
+              },
+              {
+                "name": "reinsuranceincome",
+                "type":"decimal"
+              },
+              {
+                "name": "reinsurance",
+                "type":"decimal"
+              },
+              {
+                "name": "unearnedpremiumreserve",
+                "type":"decimal"
+              },
+              {
+                "name": "otheroperatingrevenue",
+                "type":"decimal"
+              },
+              {
+                "name": "specialitemsor",
+                "type":"decimal"
+              },
+              {
+                "name": "adjustmentitemsor",
+                "type":"decimal"
+              },
+              {
+                "name": "totaloperatingcost",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingpayout",
+                "type":"decimal"
+              },
+              {
+                "name": "refundedpremiums",
+                "type":"decimal"
+              },
+              {
+                "name": "compensationexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "amortizationexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "premiumreserve",
+                "type":"decimal"
+              },
+              {
+                "name": "amortizationpremiumreserve",
+                "type":"decimal"
+              },
+              {
+                "name": "policydividendpayout",
+                "type":"decimal"
+              },
+              {
+                "name": "reinsurancecost",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingandadminexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "amortizationreinsurancecost",
+                "type":"decimal"
+              },
+              {
+                "name": "insurancecommissionexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "otheroperatingcost",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingcost",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingtaxsurcharges",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "administrationexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "financialexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "assetimpairmentloss",
+                "type":"decimal"
+              },
+              {
+                "name": "specialitemstoc",
+                "type":"decimal"
+              },
+              {
+                "name": "adjustmentitemstoc",
+                "type":"decimal"
+              },
+              {
+                "name": "othernetrevenue",
+                "type":"decimal"
+              },
+              {
+                "name": "fairvaluechangeincome",
+                "type":"decimal"
+              },
+              {
+                "name": "investincome",
+                "type":"decimal"
+              },
+              {
+                "name": "investincomeassociates",
+                "type":"decimal"
+              },
+              {
+                "name": "exchangeincome",
+                "type":"decimal"
+              },
+              {
+                "name": "otheritemseffectingop",
+                "type":"decimal"
+              },
+              {
+                "name": "adjusteditemseffectingop",
+                "type":"decimal"
+              },
+              {
+                "name": "operatingprofit",
+                "type":"decimal"
+              },
+              {
+                "name": "nonoperatingincome",
+                "type":"decimal"
+              },
+              {
+                "name": "nonoperatingexpense",
+                "type":"decimal"
+              },
+              {
+                "name": "noncurrentassetssdealloss",
+                "type":"decimal"
+              },
+              {
+                "name": "otheritemseffectingtp",
+                "type":"decimal"
+              },
+              {
+                "name": "adjusteditemseffectingtp",
+                "type":"decimal"
+              },
+              {
+                "name": "totalprofit",
+                "type":"decimal"
+              },
+              {
+                "name": "incometaxcost",
+                "type":"decimal"
+              },
+              {
+                "name": "uncertainedinvestmentlosses",
+                "type":"decimal"
+              },
+              {
+                "name": "otheritemseffectingnp",
+                "type":"decimal"
+              },
+              {
+                "name": "adjusteditemseffectingnp",
+                "type":"decimal"
+              },
+              {
+                "name": "netprofit",
+                "type":"decimal"
+              },
+              {
+                "name": "npparentcompanyowners",
+                "type":"decimal"
+              },
+              {
+                "name": "minorityprofit",
+                "type":"decimal"
+              },
+              {
+                "name": "otheritemseffectingnpp",
+                "type":"decimal"
+              },
+              {
+                "name": "adjusteditemseffectingnpp",
+                "type":"decimal"
+              },
+              {
+                "name": "othercompositeincome",
+                "type":"decimal"
+              },
+              {
+                "name": "adjusteditemseffectingci",
+                "type":"decimal"
+              },
+              {
+                "name": "totalcompositeincome",
+                "type":"decimal"
+              },
+              {
+                "name": "ciparentcompanyowners",
+                "type":"decimal"
+              },
+              {
+                "name": "ciminorityowners",
+                "type":"decimal"
+              },
+              {
+                "name": "adjusteditemseffectingpci",
+                "type":"decimal"
+              },
+              {
+                "name": "basiceps",
+                "type":"decimal"
+              },
+              {
+                "name": "dilutedeps",
+                "type":"decimal"
+              },
+              {
+                "name": "specialfieldremark",
+                "type":"string"
+              },
+              {
+                "name": "updatetime",
+                "type":"string"
+              },
+              {
+                "name": "jsid",
+                "type":"bigint"
+              },
+              {
+                "name": "ifcomplete",
+                "type":"int"
+              },
+              {
+                "name": "ociparentcompanyowners",
+                "type":"decimal"
+              },
+              {
+                "name": "ocinotinincomestatement",
+                "type":"decimal"
+              },
+              {
+                "name": "ociremearsure",
+                "type":"decimal"
+              },
+              {
+                "name": "ociequitynotinis",
+                "type":"decimal"
+              },
+              {
+                "name": "ociinincomestatement",
+                "type":"decimal"
+              },
+              {
+                "name": "ociequityinis",
+                "type":"decimal"
+              },
+              {
+                "name": "ocifairvalue",
+                "type":"decimal"
+              },
+              {
+                "name": "ocitomaturityfa",
+                "type":"decimal"
+              },
+              {
+                "name": "ocicfloss",
+                "type":"decimal"
+              },
+              {
+                "name": "ociforeigncurrencyfsa",
+                "type":"decimal"
+              },
+              {
+                "name": "ociothers",
+                "type":"decimal"
+              },
+              {
+                "name": "ociminorityowners",
+                "type":"decimal"
+              },
+              {
+                "name": "otherrevenue",
+                "type":"decimal"
+              },
+              {
+                "name": "assetdealincome",
+                "type":"decimal"
+              },
+              {
+                "name": "opersustcateg",
+                "type":"decimal"
+              },
+              {
+                "name": "opersustnetp",
+                "type":"decimal"
+              },
+              {
+                "name": "disconopernetp",
+                "type":"decimal"
+              },
+              {
+                "name": "ownershipcateg",
+                "type":"decimal"
+              },
+              {
+                "name": "randd",
+                "type":"decimal"
+              },
+              {
+                "name": "creditimpairmentl",
+                "type":"decimal"
+              },
+              {
+                "name": "netopenhedgeincome",
+                "type":"decimal"
+              },
+              {
+                "name": "interestfinexp",
+                "type":"decimal"
+              },
+              {
+                "name": "interestincomefin",
+                "type":"decimal"
+              },
+              {
+                "name": "othequfvchange",
+                "type":"decimal"
+              },
+              {
+                "name": "corporatecrchange",
+                "type":"decimal"
+              },
+              {
+                "name": "othdebtinveschange",
+                "type":"decimal"
+              },
+              {
+                "name": "finassetrotherci",
+                "type":"decimal"
+              },
+              {
+                "name": "otherdebtinvestcip",
+                "type":"decimal"
+              },
+              {
+                "name": "preinsurrsrv",
+                "type":"decimal"
+              },
+              {
+                "name": "netclaimincurred",
+                "type":"decimal"
+              },
+              {
+                "name": "netpremiumreserve",
+                "type":"decimal"
+              },
+              {
+                "name": "amortisedcostincome",
+                "type":"decimal"
+              },
+              {
+                "name": "InfoSourceCode",
+                "type":"string"
+              },
+              {
+                "name": "InsertTime",
+                "type":"string"
+              }
+
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -46,4 +46,13 @@ public class Key {
 
     public static final String PARQUET_SCHEMA = "parquetSchema";
     public static final String PARQUET_MERGE_RESULT = "parquetMergeResult";
+
+    //hive jdbc 相关
+    public static final String IS_ENABLE_JDBC = "isEnableJdbc";
+    public static final String HIVE_JDBC = "hiveJdbc";
+    public static final String POST_SQL = "postSql";
+    public static final String HIVE_USER = "hiveUser";
+    public static final String HIVE_PASSWORD = "hive_password";
+
+
 }

@@ -27,7 +27,9 @@ public enum FrameworkErrorCode implements ErrorCode {
     START_TASKGROUP_ERROR("Framework-17", "taskGroup启动失败,请联系DataX开发团队解决"),
     CALL_DATAX_SERVICE_FAILED("Framework-18", "请求 DataX Service 出错."),
     CALL_REMOTE_FAILED("Framework-19", "远程调用失败"),
-    KILLED_EXIT_VALUE("Framework-143", "Job 收到了 Kill 命令.");
+    KILLED_EXIT_VALUE("Framework-143", "Job 收到了 Kill 命令."),
+
+    Log_DB_EBABLE("log-db-99", "开启了log 记录功能需要进行配置必填参数");
 
     private final String code;
 
