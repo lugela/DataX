@@ -1,0 +1,6 @@
+{
+    "name": "hivereader11",
+    "class": "com.alibaba.datax.plugin.reader.hivereader11.HiveReader",
+    "description": "",
+    "developer": "oyl"
+}

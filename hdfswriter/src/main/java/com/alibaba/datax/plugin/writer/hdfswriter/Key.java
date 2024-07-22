@@ -31,6 +31,7 @@ public class Key {
     public static final String HAVE_KERBEROS = "haveKerberos";
     public static final String KERBEROS_KEYTAB_FILE_PATH = "kerberosKeytabFilePath";
     public static final String KERBEROS_PRINCIPAL = "kerberosPrincipal";
+    public static  final String KERBEROS_FILE_PATH = "krbFilePath";
     // hadoop config
     public static final String HADOOP_CONFIG = "hadoopConfig";
 

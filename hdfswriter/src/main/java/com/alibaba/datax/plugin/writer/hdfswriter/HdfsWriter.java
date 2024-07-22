@@ -218,10 +218,10 @@ public class HdfsWriter extends Writer {
                     for (String execSql: execSqls){
                         statement.execute(execSql);
                     }
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
                     //异常抛出
-                    throw DataXException.asDataXException(HdfsWriterErrorCode.HIVE_EXCUTE_ERROR,  throwables.getMessage());
+                    throw DataXException.asDataXException(HdfsWriterErrorCode.HIVE_EXCUTE_ERROR,  e.getMessage());
 
                 }finally {
                     DBUtil.closeDBResources(statement,connection);

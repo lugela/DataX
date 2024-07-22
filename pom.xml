@@ -51,7 +51,10 @@
         <module>sqlserverreader</module>
         <module>clickhousereader</module>
         <module>hivereader</module>
+
+
         <!--
+         <module>hivereader11</module>
          <module>hivereader</module>
         <module>hivereadernew</module>
         <module>mysqlreader</module>
@@ -90,13 +93,18 @@
 -->
 
         <!-- writer -->
+
         <module>hdfswriter</module>
-        <module>mysqlwriter</module>
-        <module>elasticsearchwriter</module>
+        <module>oraclewriter</module>
+        <module>oceanbasev10writer</module>
         <!--
+         <module>mysqlwriter</module>
+        <module>elasticsearchwriter</module>
+        <module>hdfswriter</module>
+
+        <module>hdfswriter</module>
         <module>starrockswriter</module>
         <module>drdswriter</module>
-        <module>oraclewriter</module>
         <module>sqlserverwriter</module>
         <module>postgresqlwriter</module>
         <module>kingbaseeswriter</module>

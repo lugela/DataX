@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.reader.hivereader;
+package com.alibaba.datax.plugin.reader.hivereader11;
 
 /**
  * @author dean 2019/10/25.

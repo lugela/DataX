@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.hdfswriter;
+package com.alibaba.datax.plugin.reader.hivereader11;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
@@ -51,7 +51,7 @@ public class DBUtil {
             }, 9, 1000L, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(
-                    HdfsWriterErrorCode.CONN_DB_ERROR,
+                    HiveReaderErrorCode.CONN_DB_ERROR,
                     String.format("数据库连接失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", url), e);
         }
 
@@ -68,21 +68,20 @@ public class DBUtil {
     private static Connection connect(String url, Properties prop, Configuration taskConfig) {
         boolean haveKerberos = taskConfig.getBool(Key.HAVE_KERBEROS, false);
         if (haveKerberos) {
-            LOG.info("进行kerberos 认证");
-            String kerberosKeytabFilePath = taskConfig.getString(Key.KERBEROS_KEYTAB_FILE_PATH);
-            String kerberosPrincipal = taskConfig.getString(Key.KERBEROS_PRINCIPAL);
             String krbFilePath = taskConfig.getString(Key.KERBEROS_FILE_PATH);
             if(StringUtils.isNotEmpty(krbFilePath)){
                 System.setProperty("java.security.krb5.conf", krbFilePath);
             }
+            String kerberosKeytabFilePath = taskConfig.getString(Key.KERBEROS_KEYTAB_FILE_PATH);
+            String kerberosPrincipal = taskConfig.getString(Key.KERBEROS_PRINCIPAL);
             kerberosAuthentication(kerberosPrincipal, kerberosKeytabFilePath);
         }
         try {
             Class.forName("org.apache.hive.jdbc.HiveDriver");
             DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
-            return DriverManager.getConnection(url,prop);
+            return DriverManager.getConnection(url, prop);
         } catch (Exception e) {
-            throw DataXException.asDataXException(HdfsWriterErrorCode.CONN_DB_ERROR," 具体错误信息为："+e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.CONN_DB_ERROR," 具体错误信息为："+e);
         }
     }
 
@@ -95,7 +94,7 @@ public class DBUtil {
         } catch (IOException e) {
             String message = String.format("kerberos认证失败,请确定kerberosKeytabFilePath[%s]和kerberosPrincipal[%s]填写正确",
                     kerberosKeytabFilePath, kerberosPrincipal);
-            throw DataXException.asDataXException(HdfsWriterErrorCode.KERBEROS_LOGIN_ERROR, message, e);
+            throw DataXException.asDataXException(HiveReaderErrorCode.KERBEROS_LOGIN_ERROR, message, e);
         }
     }
 

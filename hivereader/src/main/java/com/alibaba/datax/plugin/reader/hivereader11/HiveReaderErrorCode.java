@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.reader.hivereader;
+package com.alibaba.datax.plugin.reader.hivereader11;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 

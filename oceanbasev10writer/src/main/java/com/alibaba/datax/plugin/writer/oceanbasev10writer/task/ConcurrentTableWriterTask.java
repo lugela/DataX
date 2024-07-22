@@ -76,7 +76,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	private Condition condition = lock.newCondition();
 	
 	private long startTime;
-	private String obWriteMode = "update";
+	private String obWriteMode = "insert";
 	private boolean isOracleCompatibleMode = false;
 	private String obUpdateColumns = null;
 	private List<Pair<String, int[]>> deleteColPos;
@@ -85,10 +85,12 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	@Override
 	public void init(Configuration config) {
 		super.init(config);
+
 		// OceanBase 所有操作都是 insert into on duplicate key update 模式
 		// writeMode应该使用enum来定义
-		this.writeMode = "update";
-        obWriteMode = config.getString(Config.OB_WRITE_MODE, "update");
+		this.writeMode = "insert";
+		this.writeMode = config.getString("writeMode", "insert");
+        obWriteMode = config.getString(Config.OB_WRITE_MODE, "insert");
 		ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
 		dbName = connectInfo.databaseName;
 		//init check memstore
@@ -123,7 +125,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
 		groupInsertValues = new HashMap<Long, List<Record>>();
 		partitionKeyIndexes = new ArrayList<Integer>();
-		rewriteSql();
+		rewriteSql(config);
 
 		if (null == concurrentWriter) {
 			concurrentWriter = new ConcurrentTableWriter(config, connectInfo, writeRecordSql);
@@ -169,15 +171,30 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 				concurrentWriter.getFinishTaskCount());
 	}
 	
-	private void rewriteSql() {
-		Connection conn = connHolder.initConnection();
+	private void rewriteSql(Configuration config) {
+
+       //获取到sql方式是否属于oracle
+		String writeModeNew = config.getString("writeMode");
+		if (writeModeNew.toLowerCase().startsWith("update_oracle") || writeModeNew.toLowerCase().startsWith("update_mysql")){
+			//获取到拼接sql
+			String insertOrReplaceTemplate = config.getString("insertOrReplaceTemplate");
+			//获取拼接的sql
+			this.writeRecordSql = String.format(insertOrReplaceTemplate, table);
+
+		} else {
+			Connection conn = connHolder.initConnection();
+			this.writeRecordSql = ObWriterUtils.buildWriteSql(table, columns, conn, writeMode, obUpdateColumns);
+			LOG.info("writeRecordSql :{}", this.writeRecordSql);
+		}
+
+/*		Connection conn = connHolder.initConnection();
 		if (isOracleCompatibleMode && obWriteMode.equalsIgnoreCase("update")) {
 			// change obWriteMode to insert so the insert statement will be generated.
 			obWriteMode = "insert";
 			deleteColPos = ObWriterUtils.buildDeleteSql(conn, dbName, table, columns);
 		}
 		this.writeRecordSql = ObWriterUtils.buildWriteSql(table, columns, conn, obWriteMode, obUpdateColumns);
-		LOG.info("writeRecordSql :{}", this.writeRecordSql);
+		LOG.info("writeRecordSql :{}", this.writeRecordSql);*/
 	}
 	
 	public void prepare(Configuration writerSliceConfig) {

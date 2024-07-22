@@ -110,6 +110,9 @@ public final class WriterUtil {
     }
 
     public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType, boolean forceUseUpdate) {
+        if (writeMode.toLowerCase().contains("update_oracle") || writeMode.toLowerCase().contains("update_mysql")){
+            forceUseUpdate = false;
+        }
         boolean update = writeMode.trim().toLowerCase().startsWith("update");
         boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
                 || writeMode.trim().toLowerCase().startsWith("replace")
@@ -140,6 +143,27 @@ public final class WriterUtil {
             String[] primaryKeyArrs = primaryKeys.split(",");
             String[] columns = columnHolders.stream().map(x -> x.replaceAll("\"", "")).toArray(String[]::new);
             writeDataSqlTemplate = getUpsertStatement("%s", columns, primaryKeyArrs, true);
+
+        } else if(forceUseUpdate == false && dataBaseType == DataBaseType.OceanBase && update) {
+            //判断是OB，但是OB总分为msyql 协议和oracle协议
+            if (writeMode.toLowerCase().contains("update_oracle")){
+                //oracel 协议
+                String s1 = writeMode.trim().toLowerCase();
+                String primaryKeys=s1.substring(s1.indexOf("(")+1,s1.indexOf(")")).replaceAll("\"","");
+                String[] primaryKeyArrs = primaryKeys.split(",");
+                String[] columns = columnHolders.stream().map(x -> x.replaceAll("\"", "")).toArray(String[]::new);
+                writeDataSqlTemplate = getUpsertStatement("%s", columns, primaryKeyArrs, true);
+            }else if (writeMode.toLowerCase().contains("update_mysql")){
+                writeDataSqlTemplate = new StringBuilder()
+                        .append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ","))
+                        .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
+                        .append(")")
+                        .append(onDuplicateKeyUpdateString(columnHolders))
+                        .toString();
+            }else {
+                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
+                        String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前对OceanBase 更新语法支持配置为 update_oracle(主键)、update_mysql. 请检查您的配置并作出修改.", writeMode));
+            }
 
         } else {
 
